@@ -1,113 +1,361 @@
+
 #include <stdio.h>
+#include <stdbool.h>
 
-// This Function Counts the Pieces// 
+#define SIZE 3
 
-int count9(int a1,int a2,int a3,int a4,int a5,int a6,int a7,int a8,int a9)
+typedef struct 
 {
-    return a1+a2+a3+a4+a5+a6+a7+a8+a9;
+    bool good;
+    bool go;
+    bool start;
+    bool over;
+    bool found;
+    int val;
+    bool red[SIZE + 1][SIZE + 1];
+    bool blue[SIZE + 1][SIZE + 1];
+    bool seen[SIZE + 1][SIZE + 1];
+    bool touched[SIZE + 1][SIZE + 1];
+} GameState;
+
+bool in_bounds(int row, int col);
+void init_game(GameState *game);
+int count_board(bool board[SIZE + 1][SIZE + 1]);
+int count_free_cells(GameState *game);
+void update_over(GameState *game);
+void remove_position(GameState *game, int row, int col);
+void replace_position(GameState *game, int row, int col);
+void expand_position(GameState *game, int row, int col);
+void update_position(GameState *game, int row, int col);
+void next_player_move(GameState *game, int row, int col);
+void print_board(GameState *game);
+void print_result(GameState *game);
+
+static bool in_bounds(int row, int col) 
+{
+    return (row >= 1 && row <= SIZE && col >= 1 && col <= SIZE);
 }
 
-// This function gets the coordinates // 
-
-void setCell(int a,int b,int val,
-    int *c11,int *c12,int *c13,int *c21,int *c22,int *c23,int *c31,int *c32,int *c33)
+void init_game(GameState *game) 
 {
-    if(a==1&&b==1)*c11=val;
-    else if(a==1&&b==2)*c12=val;
-    else if(a==1&&b==3)*c13=val;
-    else if(a==2&&b==1)*c21=val;
-    else if(a==2&&b==2)*c22=val;
-    else if(a==2&&b==3)*c23=val;
-    else if(a==3&&b==1)*c31=val;
-    else if(a==3&&b==2)*c32=val;
-    else if(a==3&&b==3)*c33=val;
-}
+    int row;
+    int col;
 
-int getCell(int a,int b,
-    int c11,int c12,int c13,int c21,int c22,int c23,int c31,int c32,int c33)
-{
-    int v=0;
-    if(a==1&&b==1)v=c11;
-    else if(a==1&&b==2)v=c12;
-    else if(a==1&&b==3)v=c13;
-    else if(a==2&&b==1)v=c21;
-    else if(a==2&&b==2)v=c22;
-    else if(a==2&&b==3)v=c23;
-    else if(a==3&&b==1)v=c31;
-    else if(a==3&&b==2)v=c32;
-    else if(a==3&&b==3)v=c33;
-    return value;
-}
+    game->good = false;
+    game->go = true;
+    game->start = true;
+    game->over = false;
+    game->found = false;
+    game->val = 0;
 
-/* Expand */
-void Expand(int a,int b,int *go,
-    int *R11,int *R12,int *R13,int *R21,int *R22,int *R23,int *R31,int *R32,int *R33,
-    int *B11,int *B12,int *B13,int *B21,int *B22,int *B23,int *B31,int *B32,int *B33,
-    int *S11,int *S12,int *S13,int *S21,int *S22,int *S23,int *S31,int *S32,int *S33,
-    int *T11,int *T12,int *T13,int *T21,int *T22,int *T23,int *T31,int *T32,int *T33)
-{
-    int found;
-
-    Remove(a,b,*go,
-        R11,R12,R13,R21,R22,R23,R31,R32,R33,
-        B11,B12,B13,B21,B22,B23,B31,B32,B33,
-        S11,S12,S13,S21,S22,S23,S31,S32,S33,
-        T11,T12,T13,T21,T22,T23,T31,T32,T33);
-
-    if(*go==1 && a-1>=1)
-        Replace(a-1,b,go,&found,
-            R11,R12,R13,R21,R22,R23,R31,R32,R33,
-            B11,B12,B13,B21,B22,B23,B31,B32,B33,
-            S11,S12,S13,S21,S22,S23,S31,S32,S33,
-            T11,T12,T13,T21,T22,T23,T31,T32,T33);
-
-    if(*go==0 && a+1<=3)
-        Replace(a+1,b,go,&found,
-            R11,R12,R13,R21,R22,R23,R31,R32,R33,
-            B11,B12,B13,B21,B22,B23,B31,B32,B33,
-            S11,S12,S13,S21,S22,S23,S31,S32,S33,
-            T11,T12,T13,T21,T22,T23,T31,T32,T33);
-
-    if(b-1>=1)
-        Replace(a,b-1,go,&found,
-            R11,R12,R13,R21,R22,R23,R31,R32,R33,
-            B11,B12,B13,B21,B22,B23,B31,B32,B33,
-            S11,S12,S13,S21,S22,S23,S31,S32,S33,
-            T11,T12,T13,T21,T22,T23,T31,T32,T33);
-
-    if(b+1<=3)
-        Replace(a,b+1,go,&found,
-            R11,R12,R13,R21,R22,R23,R31,R32,R33,
-            B11,B12,B13,B21,B22,B23,B31,B32,B33,
-            S11,S12,S13,S21,S22,S23,S31,S32,S33,
-            T11,T12,T13,T21,T22,T23,T31,T32,T33);
-}
-
-/* Update */
-void Update(int a,int b,int *go,int *good,
-    int *R11,int *R12,int *R13,int *R21,int *R22,int *R23,int *R31,int *R32,int *R33,
-    int *B11,int *B12,int *B13,int *B21,int *B22,int *B23,int *B31,int *B32,int *B33,
-    int *S11,int *S12,int *S13,int *S21,int *S22,int *S23,int *S31,int *S32,int *S33,
-    int *T11,int *T12,int *T13,int *T21,int *T22,int *T23,int *T31,int *T32,int *T33)
-{
-    if(getCell(a,b,*S11,*S12,*S13,*S21,*S22,*S23,*S31,*S32,*S33)==0)
+    for (row = 0; row <= SIZE; row++) 
     {
-        setCell(a,b,1,S11,S12,S13,S21,S22,S23,S31,S32,S33);
-        *good = 1;
-    }
-    else if(getCell(a,b,*T11,*T12,*T13,*T21,*T22,*T23,*T31,*T32,*T33)==0)
-    {
-        setCell(a,b,1,T11,T12,T13,T21,T22,T23,T31,T32,T33);
-        Expand(a,b,go,
-            R11,R12,R13,R21,R22,R23,R31,R32,R33,
-            B11,B12,B13,B21,B22,B23,B31,B32,B33,
-            S11,S12,S13,S21,S22,S23,S31,S32,S33,
-            T11,T12,T13,T21,T22,T23,T31,T32,T33);
-        *good = 1;
-    }
-    else
-    {
-        *good = 0;
+        for (col = 0; col <= SIZE; col++) 
+        {
+            game->red[row][col] = false;
+            game->blue[row][col] = false;
+            game->seen[row][col] = false;
+            game->touched[row][col] = false;
+        }
     }
 }
+
+int count_board(bool board[SIZE + 1][SIZE + 1]) 
+{
+    int row;
+    int col;
+    int count = 0;
+
+    for (row = 1; row <= SIZE; row++)
+     {
+        for (col = 1; col <= SIZE; col++) 
+        {
+            if (board[row][col]) 
+            {
+                count++;
+            }
+        }
+    }
+
+    return count;
+}
+
+int count_free_cells(GameState *game) 
+{
+    int redCount = count_board(game->red);
+    int blueCount = count_board(game->blue);
+    int occupied = redCount + blueCount;
+    int freeCells = (SIZE * SIZE) - occupied;
+
+    return freeCells;
+}
+
+void update_over(GameState *game) 
+{
+    int redCount = count_board(game->red);
+    int blueCount = count_board(game->blue);
+    int freeCells = count_free_cells(game);
+    bool one_side_left = (!game->start) &&
+                         ((redCount > 0 && blueCount == 0) ||
+                          (redCount == 0 && blueCount > 0));
+
+    game->over = (freeCells == 3) || (game->val >= 20) || one_side_left;
+}
+
+void remove_position(GameState *game, int row, int col) 
+{
+    if (in_bounds(row, col)) {
+        if (game->go) {
+            game->red[row][col] = false;
+        } else {
+            game->blue[row][col] = false;
+        }
+
+        game->seen[row][col] = false;
+        game->touched[row][col] = false;
+    }
+}
+
+void replace_position(GameState *game, int row, int col) 
+{
+    if (in_bounds(row, col)) 
+    {
+        game->found = false;
+
+        if (game->go) {
+            if (game->blue[row][col]) 
+            {
+                game->blue[row][col] = false;
+                game->found = true;
+            }
+
+            if (game->red[row][col]) 
+            {
+                game->found = true;
+            }
+
+            if (!game->red[row][col]) 
+            {
+                game->red[row][col] = true;
+            }
+        } else {
+            if (game->red[row][col]) 
+            {
+                game->red[row][col] = false;
+                game->found = true;
+            }
+
+            if (game->blue[row][col]) 
+            {
+                game->found = true;
+            }
+
+            if (!game->blue[row][col]) 
+            {
+                game->blue[row][col] = true;
+            }
+        }
+
+        if (game->found && !game->seen[row][col]) 
+        {
+            game->seen[row][col] = true;
+            game->found = false;
+        }
+
+        if (game->found && game->seen[row][col] && !game->touched[row][col]) 
+        {
+            game->touched[row][col] = true;
+            expand_position(game, row, col);
+        }
+    }
+}
+
+void expand_position(GameState *game, int row, int col) 
+{
+    int up = row - 1;
+    int down = row + 1;
+    int left = col - 1;
+    int right = col + 1;
+
+    remove_position(game, row, col);
+
+    if (game->go) 
+    {
+        replace_position(game, up, col);
+        } 
+            else 
+        {
+        replace_position(game, down, col);
+    }
+
+    replace_position(game, row, left);
+    replace_position(game, row, right);
+}
+
+void update_position(GameState *game, int row, int col) 
+{
+    game->good = false;
+
+    if (in_bounds(row, col)) {
+        if (!game->seen[row][col]) {
+            game->seen[row][col] = true;
+            game->good = !game->good;
+        } else if (game->seen[row][col] && !game->touched[row][col]) {
+            game->touched[row][col] = true;
+            expand_position(game, row, col);
+        }
+    }
+}
+
+void next_player_move(GameState *game, int row, int col) {
+    if (!game->over && in_bounds(row, col)) {
+        if (game->start && game->go) {
+            game->red[row][col] = true;
+            game->seen[row][col] = true;
+            game->good = true;
+        } else if (game->start && !game->go) {
+            game->blue[row][col] = true;
+            game->seen[row][col] = true;
+            game->good = true;
+        } else if (!game->start &&
+                   ((game->go && game->red[row][col]) ||
+                    (!game->go && game->blue[row][col]))) {
+            update_position(game, row, col);
+            game->good = true;
+        }
+
+        if (game->start) {
+            if (count_board(game->red) == 1 && count_board(game->blue) == 1) {
+                game->start = false;
+            }
+        }
+
+        if (game->good) {
+            game->good = !game->good;
+            game->go = !game->go;
+            game->val++;
+        }
+
+        update_over(game);
+    }
+}
+
+void print_board(GameState *game) {
+    int row;
+    int col;
+    int redCount = count_board(game->red);
+    int blueCount = count_board(game->blue);
+
+    printf("\n");
+    printf("Turn: %s | Start: %s | Moves: %d | Free cells: %d\n",
+           game->go ? "Red" : "Blue",
+           game->start ? "true" : "false",
+           game->val,
+           count_free_cells(game));
+    printf("Red pieces: %d | Blue pieces: %d\n", redCount, blueCount);
+    printf("\n");
+    
+    for (row = 1; row <= SIZE; row++) {
+        if (row > 1) {
+            printf("---|---|---\n");
+        }
+        
+        for (col = 1; col <= SIZE; col++) {
+            char cell = ' ';
+            
+            if (game->red[row][col] && game->blue[row][col]) {
+                cell = 'X';
+            } else if (game->red[row][col]) {
+                cell = 'R';
+            } else if (game->blue[row][col]) {
+                cell = 'B';
+            } else {
+                cell = ' ';
+            }
+            printf(" %c ", cell);
+            if (col < SIZE) {
+                printf("|");
+            }
+        }
+        printf("\n");
+    }
+    
+    printf("\n");
+}
+
+void print_result(GameState *game) {
+    int redCount = count_board(game->red);
+    int blueCount = count_board(game->blue);
+
+    if (game->over) {
+        if (redCount > blueCount) {
+            printf("Game over: R WINS!\n");
+        } else if (redCount < blueCount) {
+            printf("Game over: B WINS!\n");
+        } else {
+            printf("Game over: DRAW!\n");
+        }
+    } else {
+        printf("Game stopped before reaching an over state.\n");
+    }
+}
+
+int main() {
+    GameState game;
+    int row;
+    int col;
+    int status;
+
+    init_game(&game);
+	
+	printf("\n=====================================================================================\n");
+	printf("                       WELCOME TO CCDSTRU Project Simulator\n");
+	printf("                              Board size: 3 x 3\n");
+	printf("                          Enter moves as: row col\n");
+    printf("   The program ends when the PDF-defined over condition is reached or input ends.\n\n\n");
+    printf("================================= GAME RULES ========================================\n\n");
+	printf("STEP 1: FIRST MOVES:\n");
+	printf("       - Red places 1 piece anywhere\n");
+	printf("       - Blue places 1 piece anywhere\n\n");
+	printf("STEP 2: MAIN GAME:\n");
+	printf("       - On your turn, select a cell containing YOUR piece\n\n");
+	printf("STEP 3: SELECTING YOUR PIECE:\n");
+	printf("       -  First time you pick it: The piece stays, nothing happens\n");
+	printf("       -  Second time you pick the same piece it EXPLODES and spreads to nearby cells\n\n");
+	printf("STEP 4: WHEN A PIECE EXPLODES:\n");
+	printf("       - Red spreads: UP, LEFT, RIGHT\n");
+	printf("       - Blue spreads: DOWN, LEFT, RIGHT\n\n");
+	printf("STEP 5: PLACING NEW PIECES:\n");
+	printf("       - Empty cell: Place your piece and your piece will appear\n");
+	printf("       - Opponent's cell: Capture and place your piece\n");
+	printf("       - Your cell: Nothing happens your not allowed to stack\n\n");
+	printf("STEP 6: GAME ENDS WHEN:\n");
+	printf("       - 3 or less empty cells left on the board\n");
+	printf("       - 20 total moves have been made\n");
+	printf("       - One player has no pieces left\n\n");
+	printf("STEP 7: HOW TO WIN:\n");
+	printf("       - More pieces than opponent = YOU WIN!\n");
+	printf("       - Same number of pieces = DRAW\n\n");
+    printf("======================================================================================\n");
+
+    status = 2;
+    while (!game.over && status == 2) {
+        print_board(&game);
+        printf("Move for %s: ", game.go ? "Red" : "Blue");
+        status = scanf("%d %d", &row, &col);
+
+        if (status == 2) {
+            if (in_bounds(row, col)) {
+                next_player_move(&game, row, col);
+            } else {
+                printf("Invalid position. Use values from 1 to 3.\n");
+            }
+        }
+    }
+
+    update_over(&game);
+    print_board(&game);
+    print_result(&game);
+
+    return 0;
 
